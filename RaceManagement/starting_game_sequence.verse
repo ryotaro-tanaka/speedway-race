@@ -26,13 +26,11 @@ starting_game_sequence := class(creative_device):
 
     # The amount of time to wait in the pregame lobby.
     @editable
-    PreGameTime:float = 15.0
-    # PreGameTime:float = 15.0 # Invalid constant? use "starting game sequence" in the lobby on UEFN
+    PreGameTime:float = 15.0 # Invalid constant? use "starting game sequence" in the lobby on UEFN
 
     # The total number of rounds in the race. 
     @editable
-    TotalRounds:type {Rounds:int where 1 <= Rounds} = 3
-    # TotalRounds:type {Rounds:int where 1 <= Rounds} = 2 # 3
+    TotalRounds:type {Rounds:int where 1 <= Rounds} = 2 # 3
 
     # Counts down to the start of the race during the pregame lobby.
     @editable
@@ -50,7 +48,7 @@ starting_game_sequence := class(creative_device):
     # a player reference to visualize them, and a barrier to restrict
     # them during the starting lineup.
     @editable
-    # StartingPositions:[]start_position = array{}
+    StartingPositions:[]start_position = array{}
     # StartingPositions:[][]start_position = array{}
     # # example to use
     # var Round1:[]start_position = array{start_position{...}, start_position{...}}
