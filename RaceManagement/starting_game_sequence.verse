@@ -23,6 +23,8 @@ start_position<public> := class<concrete>:
 
 # A Verse-authored creative device that can be placed in a level
 starting_game_sequence := class(creative_device):
+    @editable
+    Hogehoge:float = 100.2
 
     # The amount of time to wait in the pregame lobby.
     @editable
