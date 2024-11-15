@@ -28,10 +28,6 @@ start_positions_round<public> := class<concrete>:
     @editable
     Positions:[]start_position = array{}
 
-# start_positions_by_round<public> := class<concrete>:
-#     @editable
-#     positions:[]start_positions = array{}
-
 # A Verse-authored creative device that can be placed in a level
 starting_game_sequence := class(creative_device):
 
@@ -58,10 +54,6 @@ starting_game_sequence := class(creative_device):
     # The position each player starts in, which includes their car,
     # a player reference to visualize them, and a barrier to restrict
     # them during the starting lineup.
-    # @editable
-    # StartingPositionsByRound:[]start_positions_round = array{}
-    # # @editable
-    # var StartingPositionsCurrentRound:[]start_position = array{}
     @editable
     StartingPositionsRound0:[]start_position = array{}
     @editable
@@ -97,7 +89,7 @@ starting_game_sequence := class(creative_device):
     @editable
     EndPlayerIntroEvent:trigger_device = trigger_device{}
 
-    # this is function. if this can be property, it can be used.
+    # this is function. if this can be property without "var", it can be used.
     # this can NOT use now.
     GetPositionsByRound(): []start_position =
         if (GetRound[] = 0):
@@ -150,6 +142,10 @@ starting_game_sequence := class(creative_device):
                 StartingPosition : (
                     if (GetRound[] = 0):
                         StartingPositionsRound0
+                    else if(GetRound[] = 1):
+                        StartingPositionsRound1
+                    else if(GetRound[] = 2):
+                        StartingPositionsRound2
                     else:
                         array{}
                 )
@@ -165,6 +161,10 @@ starting_game_sequence := class(creative_device):
             StartingPosition : (
                 if (GetRound[] = 0):
                     StartingPositionsRound0
+                else if(GetRound[] = 1):
+                    StartingPositionsRound1
+                else if(GetRound[] = 2):
+                    StartingPositionsRound2
                 else:
                     array{}
             )
@@ -182,8 +182,12 @@ starting_game_sequence := class(creative_device):
         for:
             Index -> Player : Players
             StartingPosition := (
-                if (GetRound[] = 1):
+                if (GetRound[] = 0):
                     StartingPositionsRound0[Index]
+                else if(GetRound[] = 1):
+                    StartingPositionsRound1[Index]
+                else if(GetRound[] = 2):
+                    StartingPositionsRound2[Index]
                 else:
                     start_position{}
             )
