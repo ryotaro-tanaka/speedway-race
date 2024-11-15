@@ -58,10 +58,16 @@ starting_game_sequence := class(creative_device):
     # The position each player starts in, which includes their car,
     # a player reference to visualize them, and a barrier to restrict
     # them during the starting lineup.
-    @editable
-    StartingPositionsByRound:[]start_positions_round = array{}
     # @editable
-    var StartingPositionsCurrentRound:[]start_position = array{}
+    # StartingPositionsByRound:[]start_positions_round = array{}
+    # # @editable
+    # var StartingPositionsCurrentRound:[]start_position = array{}
+    @editable
+    StartingPositionsRound0:[]start_position = array{}
+    @editable
+    StartingPositionsRound1:[]start_position = array{}
+    @editable
+    StartingPositionsRound2:[]start_position = array{}
 
     # Tracks player analytics during the round.
     @editable
@@ -91,14 +97,21 @@ starting_game_sequence := class(creative_device):
     @editable
     EndPlayerIntroEvent:trigger_device = trigger_device{}
 
+    # this is function. if this can be property, it can be used.
+    # this can NOT use now.
+    GetPositionsByRound(): []start_position =
+        if (GetRound[] = 0):
+            return StartingPositionsRound0
+        else if(GetRound[] = 1):
+            return StartingPositionsRound1
+        else if(GetRound[] = 2):
+            return StartingPositionsRound2
+        else:
+            return array{}
+
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
         var Players:[]player = GetAllValidPlayers(GetPlayspace().GetPlayers())
-        set StartingPositionsCurrentRound = array{}
-
-        for(Element : StartingPositionsByRound):
-            if (GetRound[] = Element.RoundNum):
-                set StartingPositionsCurrentRound = Element.Positions
         
         RecordCurrentRound(Players, TotalRounds)
        
@@ -117,13 +130,30 @@ starting_game_sequence := class(creative_device):
         # Determine what order players should start the race in and assign them to vehicles.
         set Players = GetPlayerStartOrder(GetAllValidPlayers(GetPlayspace().GetPlayers()))
         SetupStartingPositions(Players)
-        RecordPlayerStartOrder(Players, StartingPositionsCurrentRound)
+        RecordPlayerStartOrder(
+            Players, 
+            if (GetRound[] = 0):
+                StartingPositionsRound0
+            else if(GetRound[] = 1):
+                StartingPositionsRound1
+            else if(GetRound[] = 2):
+                StartingPositionsRound2
+            else:
+                array{}
+        )
 
         # Sleep for a second to allow the car to finish spawning before assigning a player to it.
         Sleep(1.0)
 
         Vehicles:[]vehicle_spawner_device =
-            for (StartingPosition : StartingPositionsCurrentRound):
+            for: 
+                StartingPosition : (
+                    if (GetRound[] = 0):
+                        StartingPositionsRound0
+                    else:
+                        array{}
+                )
+            do:
                 StartingPosition.Car
         PlayerVehicle.AssignPlayersToVehicles(Players, Vehicles)
 
@@ -131,7 +161,14 @@ starting_game_sequence := class(creative_device):
         PlayCinematicLineup(Players)
 
         # Return control to players to start the race.
-        for (StartingPosition : StartingPositionsCurrentRound):
+        for:
+            StartingPosition : (
+                if (GetRound[] = 0):
+                    StartingPositionsRound0
+                else:
+                    array{}
+            )
+        do:
             StartingPosition.Barrier.Disable()
 
         # Record which players are in the round at the start for tracking retention across rounds.
@@ -144,7 +181,12 @@ starting_game_sequence := class(creative_device):
     SetupStartingPositions(Players:[]player)<suspends>:void=
         for:
             Index -> Player : Players
-            StartingPosition := StartingPositionsCurrentRound[Index]
+            StartingPosition := (
+                if (GetRound[] = 1):
+                    StartingPositionsRound0[Index]
+                else:
+                    start_position{}
+            )
             Vehicle := StartingPosition.Car
             Barrier := StartingPosition.Barrier
         do:
