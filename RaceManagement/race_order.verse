@@ -164,7 +164,7 @@ RecordPlayerStartOrder<public>(Players:[]player, StartingPositions:[]start_posit
         if:
             set CurrentRoundInfo.PlayerStartPositions[Player] = StartPosition
         else:
-            Test.ProjectLog("Unable to set player's start position.")
+            Test.ProjectLog("Unable to set player s start position.")
     if:
         set RoundInfo[GetSession()] = CurrentRoundInfo
     else:

@@ -21,10 +21,19 @@ start_position<public> := class<concrete>:
     @editable
     Barrier:barrier_device = barrier_device{}
 
+start_positions_round<public> := class<concrete>:
+    @editable
+    RoundNum:int = -1
+
+    @editable
+    Positions:[]start_position = array{}
+
+# start_positions_by_round<public> := class<concrete>:
+#     @editable
+#     positions:[]start_positions = array{}
+
 # A Verse-authored creative device that can be placed in a level
 starting_game_sequence := class(creative_device):
-    @editable
-    Hogehoge:float = 100.2
 
     # The amount of time to wait in the pregame lobby.
     @editable
@@ -50,12 +59,9 @@ starting_game_sequence := class(creative_device):
     # a player reference to visualize them, and a barrier to restrict
     # them during the starting lineup.
     @editable
-    StartingPositions:[]start_position = array{}
-    # StartingPositions:[][]start_position = array{}
-    # # example to use
-    # var Round1:[]start_position = array{start_position{...}, start_position{...}}
-    # StartingPositions.Add(Round1)
-    # var Position = StartingPositions[0][0]
+    StartingPositionsByRound:[]start_positions_round = array{}
+    # @editable
+    var StartingPositionsCurrentRound:[]start_position = array{}
 
     # Tracks player analytics during the round.
     @editable
@@ -88,7 +94,12 @@ starting_game_sequence := class(creative_device):
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
         var Players:[]player = GetAllValidPlayers(GetPlayspace().GetPlayers())
+        set StartingPositionsCurrentRound = array{}
 
+        for(Element : StartingPositionsByRound):
+            if (GetRound[] = Element.RoundNum):
+                set StartingPositionsCurrentRound = Element.Positions
+        
         RecordCurrentRound(Players, TotalRounds)
        
         # If this is the first round, start the pregame timer
@@ -106,13 +117,13 @@ starting_game_sequence := class(creative_device):
         # Determine what order players should start the race in and assign them to vehicles.
         set Players = GetPlayerStartOrder(GetAllValidPlayers(GetPlayspace().GetPlayers()))
         SetupStartingPositions(Players)
-        RecordPlayerStartOrder(Players, StartingPositions)
+        RecordPlayerStartOrder(Players, StartingPositionsCurrentRound)
 
         # Sleep for a second to allow the car to finish spawning before assigning a player to it.
         Sleep(1.0)
 
         Vehicles:[]vehicle_spawner_device =
-            for (StartingPosition : StartingPositions):
+            for (StartingPosition : StartingPositionsCurrentRound):
                 StartingPosition.Car
         PlayerVehicle.AssignPlayersToVehicles(Players, Vehicles)
 
@@ -120,7 +131,7 @@ starting_game_sequence := class(creative_device):
         PlayCinematicLineup(Players)
 
         # Return control to players to start the race.
-        for (StartingPosition : StartingPositions):
+        for (StartingPosition : StartingPositionsCurrentRound):
             StartingPosition.Barrier.Disable()
 
         # Record which players are in the round at the start for tracking retention across rounds.
@@ -133,7 +144,7 @@ starting_game_sequence := class(creative_device):
     SetupStartingPositions(Players:[]player)<suspends>:void=
         for:
             Index -> Player : Players
-            StartingPosition := StartingPositions[Index]
+            StartingPosition := StartingPositionsCurrentRound[Index]
             Vehicle := StartingPosition.Car
             Barrier := StartingPosition.Barrier
         do:
