@@ -56,7 +56,9 @@ GetLastCompletedRound<public>(Players:[]player, TotalRounds:int)<transacts>:int=
         then:
             set LastCompletedRound = PlayerCircuitInfo.LastCompletedRound
 
-    LastCompletedRound
+    # Round2のテストプレイをしたいので一時的にRound2から開始するように変更
+    # LastCompletedRound
+    LastCompletedRound + 1
 
 # Creates a new player_circuit_info from the given older player_circuit_info.
 MakePlayerCircuitInfo<constructor>(OldPlayerCircuitInfo:player_circuit_info)<transacts> := player_circuit_info:
