@@ -67,7 +67,11 @@ starting_game_sequence := class(creative_device):
 
     # Handles the logic for the race gamemode.
     @editable
-    RaceManager:race_manager_device = race_manager_device{}
+    RaceManager0:race_manager_device = race_manager_device{}
+    @editable
+    RaceManager1:race_manager_device = race_manager_device{}
+    @editable
+    RaceManager2:race_manager_device = race_manager_device{}
 
     # The cinematic that intros the players and their stats.
     @editable
@@ -103,6 +107,7 @@ starting_game_sequence := class(creative_device):
 
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
+        Test.ProjectLog("OnBegin開始")
         var Players:[]player = GetAllValidPlayers(GetPlayspace().GetPlayers())
         
         RecordCurrentRound(Players, TotalRounds)
@@ -175,7 +180,22 @@ starting_game_sequence := class(creative_device):
         SubmitRoundAnalytics(Players)
 
         # Begin the race!
-        RaceManager.Begin()
+        # RaceManager.Begin()
+        if (GetRound[] = 0):
+            # RaceManager0.Enable()
+            # RaceManager1.Disable()
+            # RaceManager2.Disable()
+            RaceManager0.Begin()
+        else if(GetRound[] = 1):
+            # RaceManager0.Disable()
+            # RaceManager1.Enable()
+            # RaceManager2.Disable()
+            RaceManager1.Begin()
+        else if(GetRound[] = 2):
+            # RaceManager0.Disable()
+            # RaceManager1.Disable()
+            # RaceManager2.Enable()
+            RaceManager2.Begin()
 
     # Enable each starting position that has a valid player with the appropriate devices.
     SetupStartingPositions(Players:[]player)<suspends>:void=

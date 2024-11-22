@@ -1,6 +1,9 @@
 # This file contains functions related to when a player finishes the race, such as updating
 # their stats and awarding them points based on their placement. It also handles what happens when
 # a player leaves the game, and updates player reference devices in the level whenever a player passes a checkpoint.
+# このファイルには、プレイヤーがレースを完了したときに関する関数が含まれています。
+# これには、プレイヤーの統計情報を更新し、配置に基づいてポイントを与える機能が含まれます。
+# また、プレイヤーがゲームを離れる場合の処理や、プレイヤーがチェックポイントを通過するたびにレベル内のプレイヤー参照デバイスを更新する機能も含まれています。
 
 using { /Fortnite.com/Devices }
 using { /Fortnite.com/Game }
@@ -10,14 +13,18 @@ using { PlayerStatistics }
 using { PlayerLeaderboard }
 
 # Displays a player's stats on a billboard.
-StatsMessage<localizes>(CurrentPlayer:agent, Points:int, Podiums:int, BestLapTime:float):message = "{CurrentPlayer}'s Stats:\n Points: {Points}\n Podiums: {Podiums}\n BestLapTime: {BestLapTime}\n"
-   
+StatsMessage<localizes>(CurrentPlayer:agent, Points:int, Podiums:int, BestLapTime:float):message = "{CurrentPlayer} s Stats:\n Points: {Points}\n Podiums: {Podiums}\n BestLapTime: {BestLapTime}\n"
+
 # A Verse-authored creative device that can be placed in a level
 race_end_manager := class(creative_device):
 
     # An array of each of the checkpoint devices in the level.
     @editable
     Checkpoints:[]race_checkpoint_device = array{}
+    @editable
+    Checkpoints1:[]race_checkpoint_device = array{}
+    @editable
+    Checkpoints2:[]race_checkpoint_device = array{}
 
     # The Maximum Number of Players in the experience.
     # Used for Points calculation to decrease points earned
@@ -26,8 +33,13 @@ race_end_manager := class(creative_device):
     MaxNumberOfPlayers:int = 8
 
     # Tracks when players complete a race, with the players in the first 3 spots being awarded a win.
+    # プレイヤーがレースを完了したときの追跡機能であり、最初の3つのスポットにいるプレイヤーには勝利が与えられます。
     @editable
-    RaceManager:race_manager_device = race_manager_device{}
+    RaceManager0:race_manager_device = race_manager_device{}
+    @editable
+    RaceManager1:race_manager_device = race_manager_device{}
+    @editable
+    RaceManager2:race_manager_device = race_manager_device{}
 
     # Displays the player's stats from the player_stats_table.
     @editable
@@ -66,6 +78,17 @@ race_end_manager := class(creative_device):
     # The first three players to finish the race will be awarded a win.
     var CurrentFinishOrder:int = 0
 
+    # 
+    CurrentRaceMnager(): race_manager_device = 
+        if (GetRound[] = 0): 
+            RaceManager0
+        else if (GetRound[] = 1): 
+            RaceManager1
+        else if (GetRound[] = 2): 
+            RaceManager2
+        else:
+            race_manager_device{}
+
     # Runs when the device is started in a running game
     OnBegin<override>()<suspends>:void=
         GetPlayspace().PlayerRemovedEvent().Subscribe(OnPlayerRemoved)
@@ -78,7 +101,13 @@ race_end_manager := class(creative_device):
         UpdateStatsBillboards(Players, StatsBillboards)
        
         # Wait for the race to start.
-        RaceManager.RaceBeganEvent.Await()
+        if (GetRound[] = 0): 
+            RaceManager0.RaceBeganEvent.Await()
+        else if (GetRound[] = 1): 
+            RaceManager1.RaceBeganEvent.Await()
+        else if (GetRound[] = 2): 
+            RaceManager2.RaceBeganEvent.Await()
+        # CurrentRaceMnager().RaceBeganEvent.Await()
 
         # Start the race timer for each player.
         for (Player : Players):
@@ -117,8 +146,10 @@ race_end_manager := class(creative_device):
     WaitForPlayerToFinishLap()<suspends>:void=
         loop:
             LapPlayer := race:
-                RaceManager.LapCompletedEvent.Await()
-                RaceManager.RaceCompletedEvent.Await()
+                RaceManager0.LapCompletedEvent.Await()
+                RaceManager0.RaceCompletedEvent.Await()
+                # CurrentRaceMnager().LapCompletedEvent.Await()
+                # CurrentRaceMnager().RaceCompletedEvent.Await()
 
             # Calculate a player's lap time.
             ActiveTime := RaceTimer.GetActiveDuration(LapPlayer)
@@ -135,7 +166,8 @@ race_end_manager := class(creative_device):
         race:
             # Waiting for this player to finish the race and then record the finish.
             loop:
-                FinishingPlayer := RaceManager.RaceCompletedEvent.Await()
+                FinishingPlayer := RaceManager0.RaceCompletedEvent.Await()
+                # FinishingPlayer := CurrentRaceMnager().RaceCompletedEvent.Await()
                 if:
                     FinishingPlayer = Player
                 then:

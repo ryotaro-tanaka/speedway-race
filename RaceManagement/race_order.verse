@@ -2,6 +2,9 @@
 # finish order and last completed round during the race.It also defines the round_info class to track player
 # starting positions and the current round number. It uses both of these to set up the raceline
 # starting order of players by ordering players based on who came before in the previous round.
+# このファイルは、プレイヤーの終了順位とレース中の最後に完了したラウンドを追跡する、永続化可能なクラスであるplayer_circuit_infoを定義しています。
+# また、プレイヤーの開始位置と現在のラウンド番号を追跡するためのround_infoクラスも定義しています。
+# これらのクラスを使用して、前のラウンドで誰が先に来たかに基づいてプレイヤーの開始順序を設定します。
 
 using { /Fortnite.com/Devices }
 using { /Fortnite.com/FortPlayerUtilities }
@@ -57,8 +60,8 @@ GetLastCompletedRound<public>(Players:[]player, TotalRounds:int)<transacts>:int=
             set LastCompletedRound = PlayerCircuitInfo.LastCompletedRound
 
     # Round2のテストプレイをしたいので一時的にRound2から開始するように変更
-    # LastCompletedRound
-    LastCompletedRound + 1
+    LastCompletedRound
+    # LastCompletedRound + 1
 
 # Creates a new player_circuit_info from the given older player_circuit_info.
 MakePlayerCircuitInfo<constructor>(OldPlayerCircuitInfo:player_circuit_info)<transacts> := player_circuit_info:
