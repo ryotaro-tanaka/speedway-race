@@ -35,11 +35,11 @@ race_end_manager := class(creative_device):
     # Tracks when players complete a race, with the players in the first 3 spots being awarded a win.
     # プレイヤーがレースを完了したときの追跡機能であり、最初の3つのスポットにいるプレイヤーには勝利が与えられます。
     @editable
-    RaceManager0:race_manager_device = race_manager_device{}
-    @editable
-    RaceManager1:race_manager_device = race_manager_device{}
-    @editable
-    RaceManager2:race_manager_device = race_manager_device{}
+    RaceManager:race_manager_device = race_manager_device{}
+    # @editable
+    # RaceManager1:race_manager_device = race_manager_device{}
+    # @editable
+    # RaceManager2:race_manager_device = race_manager_device{}
 
     # Displays the player's stats from the player_stats_table.
     @editable
@@ -78,16 +78,16 @@ race_end_manager := class(creative_device):
     # The first three players to finish the race will be awarded a win.
     var CurrentFinishOrder:int = 0
 
-    # 
-    CurrentRaceMnager(): race_manager_device = 
-        if (GetRound[] = 0): 
-            RaceManager0
-        else if (GetRound[] = 1): 
-            RaceManager1
-        else if (GetRound[] = 2): 
-            RaceManager2
-        else:
-            race_manager_device{}
+    # # 
+    # CurrentRaceManager(): race_manager_device = 
+    #     if (GetRound[] = 0): 
+    #         RaceManager0
+    #     else if (GetRound[] = 1): 
+    #         RaceManager1
+    #     else if (GetRound[] = 2): 
+    #         RaceManager2
+    #     else:
+    #         race_manager_device{}
 
     # Runs when the device is started in a running game
     OnBegin<override>()<suspends>:void=
@@ -101,13 +101,13 @@ race_end_manager := class(creative_device):
         UpdateStatsBillboards(Players, StatsBillboards)
        
         # Wait for the race to start.
-        if (GetRound[] = 0): 
-            RaceManager0.RaceBeganEvent.Await()
-        else if (GetRound[] = 1): 
-            RaceManager1.RaceBeganEvent.Await()
-        else if (GetRound[] = 2): 
-            RaceManager2.RaceBeganEvent.Await()
-        # CurrentRaceMnager().RaceBeganEvent.Await()
+        # if (GetRound[] = 0): 
+        #     RaceManager0.RaceBeganEvent.Await()
+        # else if (GetRound[] = 1): 
+        #     RaceManager1.RaceBeganEvent.Await()
+        # else if (GetRound[] = 2): 
+        #     RaceManager2.RaceBeganEvent.Await()
+        RaceManager.RaceBeganEvent.Await()
 
         # Start the race timer for each player.
         for (Player : Players):
@@ -146,8 +146,8 @@ race_end_manager := class(creative_device):
     WaitForPlayerToFinishLap()<suspends>:void=
         loop:
             LapPlayer := race:
-                RaceManager0.LapCompletedEvent.Await()
-                RaceManager0.RaceCompletedEvent.Await()
+                RaceManager.LapCompletedEvent.Await()
+                RaceManager.RaceCompletedEvent.Await()
                 # CurrentRaceMnager().LapCompletedEvent.Await()
                 # CurrentRaceMnager().RaceCompletedEvent.Await()
 
@@ -166,7 +166,7 @@ race_end_manager := class(creative_device):
         race:
             # Waiting for this player to finish the race and then record the finish.
             loop:
-                FinishingPlayer := RaceManager0.RaceCompletedEvent.Await()
+                FinishingPlayer := RaceManager.RaceCompletedEvent.Await()
                 # FinishingPlayer := CurrentRaceMnager().RaceCompletedEvent.Await()
                 if:
                     FinishingPlayer = Player

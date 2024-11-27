@@ -28,6 +28,30 @@ start_positions_round<public> := class<concrete>:
     @editable
     Positions:[]start_position = array{}
 
+trigger_state := class<concrete>:
+    # @editable
+    EnableDevice:trigger_device = trigger_device{}
+
+    # @editable
+    DisableDevice:trigger_device = trigger_device{}
+
+    Enable():void =
+        EnableDevice.Trigger()
+
+    Disable():void =
+        DisableDevice.Trigger()
+
+    @editable
+    StartingPositionsRound0:[]start_position = array{}
+    @editable
+    StartingPositionsRound1:[]start_position = array{}
+    @editable
+    StartingPositionsRound2:[]start_position = array{}
+    
+    # Enabledevice.TriggeredEvent.Subscribe(() => {
+    #     Test.ProjectLog("Enableの発火")
+    # })
+
 # A Verse-authored creative device that can be placed in a level
 starting_game_sequence := class(creative_device):
 
@@ -67,11 +91,11 @@ starting_game_sequence := class(creative_device):
 
     # Handles the logic for the race gamemode.
     @editable
-    RaceManager0:race_manager_device = race_manager_device{}
-    @editable
-    RaceManager1:race_manager_device = race_manager_device{}
-    @editable
-    RaceManager2:race_manager_device = race_manager_device{}
+    RaceManager:race_manager_device = race_manager_device{}
+    # @editable
+    # RaceManager1:race_manager_device = race_manager_device{}
+    # @editable
+    # RaceManager2:race_manager_device = race_manager_device{}
 
     # The cinematic that intros the players and their stats.
     @editable
@@ -93,6 +117,15 @@ starting_game_sequence := class(creative_device):
     @editable
     EndPlayerIntroEvent:trigger_device = trigger_device{}
 
+    # @editable
+    Triggers0:trigger_state = trigger_state{
+        # StartingPositionsRound0:= StartingPositionsRound0
+    }
+    @editable
+    Triggers1:trigger_state = trigger_state{}
+    @editable
+    Triggers2:trigger_state = trigger_state{}
+
     # this is function. if this can be property without "var", it can be used.
     # this can NOT use now.
     GetPositionsByRound(): []start_position =
@@ -108,8 +141,13 @@ starting_game_sequence := class(creative_device):
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
         Test.ProjectLog("OnBegin開始")
+
+        # set Triggers0.StartingPositionsRound0 = StartingPositionsRound0
+        # Triggers0.Enable()
+        # Triggers0.EnableDevice.TriggeredEvent.Await()
+
         var Players:[]player = GetAllValidPlayers(GetPlayspace().GetPlayers())
-        
+
         RecordCurrentRound(Players, TotalRounds)
        
         # If this is the first round, start the pregame timer
@@ -140,6 +178,7 @@ starting_game_sequence := class(creative_device):
         )
 
         # Sleep for a second to allow the car to finish spawning before assigning a player to it.
+        # 車がスポーンを完了するまで1秒間待機し、その後でプレイヤーを割り当てる。
         Sleep(1.0)
 
         Vehicles:[]vehicle_spawner_device =
@@ -180,22 +219,23 @@ starting_game_sequence := class(creative_device):
         SubmitRoundAnalytics(Players)
 
         # Begin the race!
-        # RaceManager.Begin()
-        if (GetRound[] = 0):
-            # RaceManager0.Enable()
-            # RaceManager1.Disable()
-            # RaceManager2.Disable()
-            RaceManager0.Begin()
-        else if(GetRound[] = 1):
-            # RaceManager0.Disable()
-            # RaceManager1.Enable()
-            # RaceManager2.Disable()
-            RaceManager1.Begin()
-        else if(GetRound[] = 2):
-            # RaceManager0.Disable()
-            # RaceManager1.Disable()
-            # RaceManager2.Enable()
-            RaceManager2.Begin()
+        RaceManager.Begin()
+        # if (GetRound[] = 0):
+        #     RaceManager0.Enable()
+        #     # RaceManager1.Disable()
+        #     # RaceManager2.Disable()
+        #     wait for 1 second
+        #     RaceManager0.Begin()
+        # else if(GetRound[] = 1):
+        #     # RaceManager0.Disable()
+        #     # RaceManager1.Enable()
+        #     # RaceManager2.Disable()
+        #     RaceManager1.Begin()
+        # else if(GetRound[] = 2):
+        #     # RaceManager0.Disable()
+        #     # RaceManager1.Disable()
+        #     # RaceManager2.Enable()
+        #     RaceManager2.Begin()
 
     # Enable each starting position that has a valid player with the appropriate devices.
     SetupStartingPositions(Players:[]player)<suspends>:void=
