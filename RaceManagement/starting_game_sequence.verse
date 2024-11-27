@@ -85,6 +85,14 @@ starting_game_sequence := class(creative_device):
     @editable
     StartingPositionsRound2:[]start_position = array{}
 
+    # checkpoints
+    @editable
+    CheckpointsRound0:[]race_checkpoint_device = array{}
+    @editable
+    CheckpointsRound1:[]race_checkpoint_device = array{}
+    @editable
+    CheckpointsRound2:[]race_checkpoint_device = array{}
+
     # Tracks player analytics during the round.
     @editable
     RoundAnalytics:[]analytics_device = array{}
@@ -92,10 +100,6 @@ starting_game_sequence := class(creative_device):
     # Handles the logic for the race gamemode.
     @editable
     RaceManager:race_manager_device = race_manager_device{}
-    # @editable
-    # RaceManager1:race_manager_device = race_manager_device{}
-    # @editable
-    # RaceManager2:race_manager_device = race_manager_device{}
 
     # The cinematic that intros the players and their stats.
     @editable
@@ -118,25 +122,25 @@ starting_game_sequence := class(creative_device):
     EndPlayerIntroEvent:trigger_device = trigger_device{}
 
     # @editable
-    Triggers0:trigger_state = trigger_state{
-        # StartingPositionsRound0:= StartingPositionsRound0
-    }
-    @editable
-    Triggers1:trigger_state = trigger_state{}
-    @editable
-    Triggers2:trigger_state = trigger_state{}
+    # Triggers0:trigger_state = trigger_state{
+    #     # StartingPositionsRound0:= StartingPositionsRound0
+    # }
+    # @editable
+    # Triggers1:trigger_state = trigger_state{}
+    # @editable
+    # Triggers2:trigger_state = trigger_state{}
 
-    # this is function. if this can be property without "var", it can be used.
-    # this can NOT use now.
-    GetPositionsByRound(): []start_position =
-        if (GetRound[] = 0):
-            return StartingPositionsRound0
-        else if(GetRound[] = 1):
-            return StartingPositionsRound1
-        else if(GetRound[] = 2):
-            return StartingPositionsRound2
-        else:
-            return array{}
+    # # this is function. if this can be property without "var", it can be used.
+    # # this can NOT use now.
+    # GetPositionsByRound(): []start_position =
+    #     if (GetRound[] = 0):
+    #         return StartingPositionsRound0
+    #     else if(GetRound[] = 1):
+    #         return StartingPositionsRound1
+    #     else if(GetRound[] = 2):
+    #         return StartingPositionsRound2
+    #     else:
+    #         return array{}
 
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
@@ -218,24 +222,31 @@ starting_game_sequence := class(creative_device):
         # Record which players are in the round at the start for tracking retention across rounds.
         SubmitRoundAnalytics(Players)
 
+        # checkpoints
+        if (GetRound[] = 0):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Enable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Disable()
+        else if (GetRound[] = 1):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Enable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Disable()
+        else if (GetRound[] = 2):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Enable()
+
         # Begin the race!
         RaceManager.Begin()
-        # if (GetRound[] = 0):
-        #     RaceManager0.Enable()
-        #     # RaceManager1.Disable()
-        #     # RaceManager2.Disable()
-        #     wait for 1 second
-        #     RaceManager0.Begin()
-        # else if(GetRound[] = 1):
-        #     # RaceManager0.Disable()
-        #     # RaceManager1.Enable()
-        #     # RaceManager2.Disable()
-        #     RaceManager1.Begin()
-        # else if(GetRound[] = 2):
-        #     # RaceManager0.Disable()
-        #     # RaceManager1.Disable()
-        #     # RaceManager2.Enable()
-        #     RaceManager2.Begin()
 
     # Enable each starting position that has a valid player with the appropriate devices.
     SetupStartingPositions(Players:[]player)<suspends>:void=

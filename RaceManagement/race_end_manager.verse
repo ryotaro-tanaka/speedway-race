@@ -19,6 +19,7 @@ StatsMessage<localizes>(CurrentPlayer:agent, Points:int, Podiums:int, BestLapTim
 race_end_manager := class(creative_device):
 
     # An array of each of the checkpoint devices in the level.
+    # レベル内の各チェックポイントデバイスの配列。不要？
     @editable
     Checkpoints:[]race_checkpoint_device = array{}
     @editable
@@ -36,10 +37,6 @@ race_end_manager := class(creative_device):
     # プレイヤーがレースを完了したときの追跡機能であり、最初の3つのスポットにいるプレイヤーには勝利が与えられます。
     @editable
     RaceManager:race_manager_device = race_manager_device{}
-    # @editable
-    # RaceManager1:race_manager_device = race_manager_device{}
-    # @editable
-    # RaceManager2:race_manager_device = race_manager_device{}
 
     # Displays the player's stats from the player_stats_table.
     @editable
@@ -78,17 +75,6 @@ race_end_manager := class(creative_device):
     # The first three players to finish the race will be awarded a win.
     var CurrentFinishOrder:int = 0
 
-    # # 
-    # CurrentRaceManager(): race_manager_device = 
-    #     if (GetRound[] = 0): 
-    #         RaceManager0
-    #     else if (GetRound[] = 1): 
-    #         RaceManager1
-    #     else if (GetRound[] = 2): 
-    #         RaceManager2
-    #     else:
-    #         race_manager_device{}
-
     # Runs when the device is started in a running game
     OnBegin<override>()<suspends>:void=
         GetPlayspace().PlayerRemovedEvent().Subscribe(OnPlayerRemoved)
@@ -101,12 +87,6 @@ race_end_manager := class(creative_device):
         UpdateStatsBillboards(Players, StatsBillboards)
        
         # Wait for the race to start.
-        # if (GetRound[] = 0): 
-        #     RaceManager0.RaceBeganEvent.Await()
-        # else if (GetRound[] = 1): 
-        #     RaceManager1.RaceBeganEvent.Await()
-        # else if (GetRound[] = 2): 
-        #     RaceManager2.RaceBeganEvent.Await()
         RaceManager.RaceBeganEvent.Await()
 
         # Start the race timer for each player.
@@ -148,8 +128,6 @@ race_end_manager := class(creative_device):
             LapPlayer := race:
                 RaceManager.LapCompletedEvent.Await()
                 RaceManager.RaceCompletedEvent.Await()
-                # CurrentRaceMnager().LapCompletedEvent.Await()
-                # CurrentRaceMnager().RaceCompletedEvent.Await()
 
             # Calculate a player's lap time.
             ActiveTime := RaceTimer.GetActiveDuration(LapPlayer)
@@ -167,7 +145,6 @@ race_end_manager := class(creative_device):
             # Waiting for this player to finish the race and then record the finish.
             loop:
                 FinishingPlayer := RaceManager.RaceCompletedEvent.Await()
-                # FinishingPlayer := CurrentRaceMnager().RaceCompletedEvent.Await()
                 if:
                     FinishingPlayer = Player
                 then:
