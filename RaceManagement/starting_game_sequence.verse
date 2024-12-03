@@ -9,6 +9,7 @@ using { /Verse.org/Native }
 using { /Verse.org/Simulation }
 using { /UnrealEngine.com/Temporary/Diagnostics }
 using { PlayerLeaderboard }
+using { /UnrealEngine.com/Temporary/SpatialMath }
 
 # A starting position on the race track.
 start_position<public> := class<concrete>:
@@ -51,6 +52,112 @@ trigger_state := class<concrete>:
     # Enabledevice.TriggeredEvent.Subscribe(() => {
     #     Test.ProjectLog("Enableの発火")
     # })
+
+# props_info := class<concrete>:
+#     Props: []creative_object = array{}
+#     RoundNum: int = -1
+#     IsVisible: logic = true
+round_enum := enum{first, second, third}
+
+props_info := class:
+    Props: []creative_object
+    IsVisible: logic
+
+stage_props := class<concrete>:
+    @editable
+    PropsRound0: []creative_object = array{}
+    @editable
+    PropsRound1: []creative_object = array{}
+    @editable
+    PropsRound2: []creative_object = array{}
+
+    var IsRound0PropsVisible: logic = true
+    var IsRound1PropsVisible: logic = true
+    var IsRound2PropsVisible: logic = true
+    TransactionValue: float = 1000.0
+
+    ReturnPropsInfo(RoundNum: round_enum, IsDefaultVisible: logic)<transacts>:props_info =
+        if (RoundNum = round_enum.first):
+            return props_info{Props:=PropsRound0, IsVisible:=IsRound0PropsVisible}
+        else if (RoundNum = round_enum.second):
+            return props_info{Props:=PropsRound1, IsVisible:=IsRound1PropsVisible}
+        else if (RoundNum = round_enum.third):
+            return props_info{Props:=PropsRound2, IsVisible:=IsRound2PropsVisible}
+        else:
+            return props_info{Props:=array{}, IsVisible:=IsDefaultVisible}
+            # if(DefaultValue := IsDefaultVisible?):
+            #     return props_info{Props:=array{}, IsVisible:=DefaultValue}
+            # else:
+            #     return props_info{Props:=array{}, IsVisible:=false} 
+
+        # var Props: []creative_object = array{}
+        # var IsVisible: logic = false
+
+        # if (RoundNum = round_enum.first):
+        #     set Props = PropsRound0
+        #     set IsVisible = IsRound0PropsVisible
+        # else if (RoundNum = round_enum.second):
+        #     set Props = PropsRound1
+        #     set IsVisible = IsRound1PropsVisible
+        # else if (RoundNum = round_enum.third):
+        #     set Props = PropsRound2
+        #     set IsVisible = IsRound2PropsVisible
+    
+    # Hide関数がないのでオブジェクトのZ軸のマイナス方向への移動で対応
+    HideProps(RoundNum: round_enum)<transacts><decides>: void =
+        PropsInfo: props_info = ReturnPropsInfo(RoundNum, false)
+
+        Test.ProjectLog("HideProps Props.Length:{(PropsInfo.Props.Length)} PropsRound2:{PropsRound2.Length}")
+
+        # すでにZ軸移動してた場合はもう移動させない
+        if (PropsInfo.IsVisible = true):
+            for(Prop: PropsInfo.Props):
+                trans :transform= Prop.GetTransform()
+                newTransform := transform{
+                    Translation := vector3{
+                        X := trans.Translation.X,
+                        Y := trans.Translation.Y,
+                        Z := trans.Translation.Z - TransactionValue
+                    },
+                    Rotation := trans.Rotation,
+                    Scale := trans.Scale
+                }
+                Prop.TeleportTo[Transform:=newTransform]
+                Test.ProjectLog("trans: {(trans.Translation)}")
+                Test.ProjectLog("newtr: {(newTransform.Translation)}")
+
+            if (RoundNum = round_enum.first):
+                set IsRound0PropsVisible = false
+            else if (RoundNum = round_enum.second):
+                set IsRound1PropsVisible = false
+            else if (RoundNum = round_enum.third):
+                set IsRound2PropsVisible = false
+    
+    # Hideで移動したZ軸マイナス分もとに戻す
+    ShowProps(RoundNum: round_enum)<transacts><decides>: void =
+        PropsInfo: props_info = ReturnPropsInfo(RoundNum, true)
+
+        # すでに初期位置にいたら移動させない
+        if (PropsInfo.IsVisible = false):
+            for(Prop: PropsInfo.Props):
+                trans :transform= Prop.GetTransform()
+                newTransform := transform{
+                    Translation := vector3{
+                        X := trans.Translation.X,
+                        Y := trans.Translation.Y,
+                        Z := trans.Translation.Z + TransactionValue
+                    },
+                    Rotation := trans.Rotation,
+                    Scale := trans.Scale
+                }
+                Prop.TeleportTo[Transform:=newTransform]
+
+            if (RoundNum = round_enum.first):
+                set IsRound0PropsVisible = true
+            else if (RoundNum = round_enum.second):
+                set IsRound1PropsVisible = true
+            else if (RoundNum = round_enum.third):
+                set IsRound2PropsVisible = true
 
 # A Verse-authored creative device that can be placed in a level
 starting_game_sequence := class(creative_device):
@@ -121,6 +228,9 @@ starting_game_sequence := class(creative_device):
     @editable
     EndPlayerIntroEvent:trigger_device = trigger_device{}
 
+    @editable
+    StageProps: stage_props = stage_props{}
+
     # @editable
     # Triggers0:trigger_state = trigger_state{
     #     # StartingPositionsRound0:= StartingPositionsRound0
@@ -144,7 +254,12 @@ starting_game_sequence := class(creative_device):
 
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
-        Test.ProjectLog("OnBegin開始")
+        Test.ProjectLog("OnBegin開始z!?")
+
+        if (round := GetRound[]):
+            Test.ProjectLog("GetRound[]: {(round)}")
+        else:
+            Test.ProjectLog("GetRound[]: ??")
 
         # set Triggers0.StartingPositionsRound0 = StartingPositionsRound0
         # Triggers0.Enable()
@@ -201,27 +316,6 @@ starting_game_sequence := class(creative_device):
                 StartingPosition.Car
         PlayerVehicle.AssignPlayersToVehicles(Players, Vehicles)
 
-        # Play cinematics before the race starts.
-        PlayCinematicLineup(Players)
-
-        # Return control to players to start the race.
-        for:
-            StartingPosition : (
-                if (GetRound[] = 0):
-                    StartingPositionsRound0
-                else if(GetRound[] = 1):
-                    StartingPositionsRound1
-                else if(GetRound[] = 2):
-                    StartingPositionsRound2
-                else:
-                    array{}
-            )
-        do:
-            StartingPosition.Barrier.Disable()
-
-        # Record which players are in the round at the start for tracking retention across rounds.
-        SubmitRoundAnalytics(Players)
-
         # checkpoints
         if (GetRound[] = 0):
             for(checkpoint:CheckpointsRound0):
@@ -245,8 +339,36 @@ starting_game_sequence := class(creative_device):
             for(checkpoint:CheckpointsRound2):
                 checkpoint.Enable()
 
+        # stage props
+        SetPropVisibility()
+
+        # Play cinematics before the race starts.
+        PlayCinematicLineup(Players)
+
+        # Return control to players to start the race.
+        for:
+            StartingPosition : (
+                if (GetRound[] = 0):
+                    StartingPositionsRound0
+                else if(GetRound[] = 1):
+                    StartingPositionsRound1
+                else if(GetRound[] = 2):
+                    StartingPositionsRound2
+                else:
+                    array{}
+            )
+        do:
+            StartingPosition.Barrier.Disable()
+
+        # Record which players are in the round at the start for tracking retention across rounds.
+        SubmitRoundAnalytics(Players)
+
         # Begin the race!
         RaceManager.Begin()
+
+    # OnEnd()<override>():void=
+    #     Test.ProjectLog("hoge?")
+
 
     # Enable each starting position that has a valid player with the appropriate devices.
     SetupStartingPositions(Players:[]player)<suspends>:void=
@@ -324,6 +446,45 @@ starting_game_sequence := class(creative_device):
                     LeavingPlayer = Player
                 then:
                     break
+
+    SetPropVisibility():void=
+        logic{
+            if (GetRound[] = 0):
+                StageProps.ShowProps[round_enum.first]
+                StageProps.HideProps[round_enum.second]
+                StageProps.HideProps[round_enum.third]
+            if (GetRound[] = 1):
+                StageProps.HideProps[round_enum.first]
+                StageProps.ShowProps[round_enum.second]
+                StageProps.HideProps[round_enum.third]
+            if (GetRound[] = 2):
+                StageProps.HideProps[round_enum.first]
+                StageProps.HideProps[round_enum.second]
+                StageProps.ShowProps[round_enum.third]
+        #         for(prop:StageProps.PropsRound2):
+        #             trans :transform= prop.GetTransform()
+        #             newTransform := transform{
+        #                 Translation := vector3{
+        #                     X := trans.Translation.X,
+        #                     Y := trans.Translation.Y,
+        #                     Z := trans.Translation.Z + -10000.0
+        #                 },
+        #                 Rotation := trans.Rotation,
+        #                 Scale := trans.Scale
+        #             }
+        #             prop.TeleportTo[Transform:=newTransform]
+        #             # Test.ProjectLog("trans: {(trans.Translation)}")
+        #             # Test.ProjectLog("newtr: {(newTransform.Translation)}")
+        #         # for(checkpoint:CheckpointsRound1):
+        #         #     checkpoint.Disable()
+        #         # for(checkpoint:CheckpointsRound2):
+        #         #     checkpoint.Disable()
+        #     else if (GetRound[] = 1):
+        #     else if (GetRound[] = 2):
+
+        #     Test.ProjectLog("faild SetPropVisibility")
+        }
+
 
 # Play the cinematic and wait for it to stop. Stopped if cinematic ends early.
 PlayAndWaitForCinematic(Cinematic:cinematic_sequence_device)<suspends>:void=
