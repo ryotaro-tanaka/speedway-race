@@ -22,41 +22,6 @@ start_position<public> := class<concrete>:
     @editable
     Barrier:barrier_device = barrier_device{}
 
-start_positions_round<public> := class<concrete>:
-    @editable
-    RoundNum:int = -1
-
-    @editable
-    Positions:[]start_position = array{}
-
-trigger_state := class<concrete>:
-    # @editable
-    EnableDevice:trigger_device = trigger_device{}
-
-    # @editable
-    DisableDevice:trigger_device = trigger_device{}
-
-    Enable():void =
-        EnableDevice.Trigger()
-
-    Disable():void =
-        DisableDevice.Trigger()
-
-    @editable
-    StartingPositionsRound0:[]start_position = array{}
-    @editable
-    StartingPositionsRound1:[]start_position = array{}
-    @editable
-    StartingPositionsRound2:[]start_position = array{}
-    
-    # Enabledevice.TriggeredEvent.Subscribe(() => {
-    #     Test.ProjectLog("Enableの発火")
-    # })
-
-# props_info := class<concrete>:
-#     Props: []creative_object = array{}
-#     RoundNum: int = -1
-#     IsVisible: logic = true
 round_enum := enum{first, second, third}
 
 props_info := class:
@@ -85,23 +50,6 @@ stage_props := class<concrete>:
             return props_info{Props:=PropsRound2, IsVisible:=IsRound2PropsVisible}
         else:
             return props_info{Props:=array{}, IsVisible:=IsDefaultVisible}
-            # if(DefaultValue := IsDefaultVisible?):
-            #     return props_info{Props:=array{}, IsVisible:=DefaultValue}
-            # else:
-            #     return props_info{Props:=array{}, IsVisible:=false} 
-
-        # var Props: []creative_object = array{}
-        # var IsVisible: logic = false
-
-        # if (RoundNum = round_enum.first):
-        #     set Props = PropsRound0
-        #     set IsVisible = IsRound0PropsVisible
-        # else if (RoundNum = round_enum.second):
-        #     set Props = PropsRound1
-        #     set IsVisible = IsRound1PropsVisible
-        # else if (RoundNum = round_enum.third):
-        #     set Props = PropsRound2
-        #     set IsVisible = IsRound2PropsVisible
     
     # Hide関数がないのでオブジェクトのZ軸のマイナス方向への移動で対応
     HideProps(RoundNum: round_enum)<transacts><decides>: void =
@@ -231,39 +179,9 @@ starting_game_sequence := class(creative_device):
     @editable
     StageProps: stage_props = stage_props{}
 
-    # @editable
-    # Triggers0:trigger_state = trigger_state{
-    #     # StartingPositionsRound0:= StartingPositionsRound0
-    # }
-    # @editable
-    # Triggers1:trigger_state = trigger_state{}
-    # @editable
-    # Triggers2:trigger_state = trigger_state{}
-
-    # # this is function. if this can be property without "var", it can be used.
-    # # this can NOT use now.
-    # GetPositionsByRound(): []start_position =
-    #     if (GetRound[] = 0):
-    #         return StartingPositionsRound0
-    #     else if(GetRound[] = 1):
-    #         return StartingPositionsRound1
-    #     else if(GetRound[] = 2):
-    #         return StartingPositionsRound2
-    #     else:
-    #         return array{}
-
     # Runs when the device is started in a running game.
     OnBegin<override>()<suspends>:void=
-        Test.ProjectLog("OnBegin開始z!?")
-
-        if (round := GetRound[]):
-            Test.ProjectLog("GetRound[]: {(round)}")
-        else:
-            Test.ProjectLog("GetRound[]: ??")
-
-        # set Triggers0.StartingPositionsRound0 = StartingPositionsRound0
-        # Triggers0.Enable()
-        # Triggers0.EnableDevice.TriggeredEvent.Await()
+        Test.ProjectLog("starting_game_sequence.OnBegin()")
 
         var Players:[]player = GetAllValidPlayers(GetPlayspace().GetPlayers())
 
@@ -317,27 +235,7 @@ starting_game_sequence := class(creative_device):
         PlayerVehicle.AssignPlayersToVehicles(Players, Vehicles)
 
         # checkpoints
-        if (GetRound[] = 0):
-            for(checkpoint:CheckpointsRound0):
-                checkpoint.Enable()
-            for(checkpoint:CheckpointsRound1):
-                checkpoint.Disable()
-            for(checkpoint:CheckpointsRound2):
-                checkpoint.Disable()
-        else if (GetRound[] = 1):
-            for(checkpoint:CheckpointsRound0):
-                checkpoint.Disable()
-            for(checkpoint:CheckpointsRound1):
-                checkpoint.Enable()
-            for(checkpoint:CheckpointsRound2):
-                checkpoint.Disable()
-        else if (GetRound[] = 2):
-            for(checkpoint:CheckpointsRound0):
-                checkpoint.Disable()
-            for(checkpoint:CheckpointsRound1):
-                checkpoint.Disable()
-            for(checkpoint:CheckpointsRound2):
-                checkpoint.Enable()
+        SetCheckpoints()
 
         # stage props
         SetPropVisibility()
@@ -447,6 +345,29 @@ starting_game_sequence := class(creative_device):
                 then:
                     break
 
+    SetCheckpoints():void=
+        if (GetRound[] = 0):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Enable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Disable()
+        else if (GetRound[] = 1):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Enable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Disable()
+        else if (GetRound[] = 2):
+            for(checkpoint:CheckpointsRound0):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound1):
+                checkpoint.Disable()
+            for(checkpoint:CheckpointsRound2):
+                checkpoint.Enable()
+
     SetPropVisibility():void=
         logic{
             if (GetRound[] = 0):
@@ -461,28 +382,6 @@ starting_game_sequence := class(creative_device):
                 StageProps.HideProps[round_enum.first]
                 StageProps.HideProps[round_enum.second]
                 StageProps.ShowProps[round_enum.third]
-        #         for(prop:StageProps.PropsRound2):
-        #             trans :transform= prop.GetTransform()
-        #             newTransform := transform{
-        #                 Translation := vector3{
-        #                     X := trans.Translation.X,
-        #                     Y := trans.Translation.Y,
-        #                     Z := trans.Translation.Z + -10000.0
-        #                 },
-        #                 Rotation := trans.Rotation,
-        #                 Scale := trans.Scale
-        #             }
-        #             prop.TeleportTo[Transform:=newTransform]
-        #             # Test.ProjectLog("trans: {(trans.Translation)}")
-        #             # Test.ProjectLog("newtr: {(newTransform.Translation)}")
-        #         # for(checkpoint:CheckpointsRound1):
-        #         #     checkpoint.Disable()
-        #         # for(checkpoint:CheckpointsRound2):
-        #         #     checkpoint.Disable()
-        #     else if (GetRound[] = 1):
-        #     else if (GetRound[] = 2):
-
-        #     Test.ProjectLog("faild SetPropVisibility")
         }
 
 
