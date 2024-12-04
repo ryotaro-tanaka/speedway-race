@@ -55,8 +55,6 @@ stage_props := class<concrete>:
     HideProps(RoundNum: round_enum)<transacts><decides>: void =
         PropsInfo: props_info = ReturnPropsInfo(RoundNum, false)
 
-        Test.ProjectLog("HideProps Props.Length:{(PropsInfo.Props.Length)} PropsRound2:{PropsRound2.Length}")
-
         # すでにZ軸移動してた場合はもう移動させない
         if (PropsInfo.IsVisible = true):
             for(Prop: PropsInfo.Props):
@@ -71,8 +69,6 @@ stage_props := class<concrete>:
                     Scale := trans.Scale
                 }
                 Prop.TeleportTo[Transform:=newTransform]
-                Test.ProjectLog("trans: {(trans.Translation)}")
-                Test.ProjectLog("newtr: {(newTransform.Translation)}")
 
             if (RoundNum = round_enum.first):
                 set IsRound0PropsVisible = false
@@ -198,6 +194,11 @@ starting_game_sequence := class(creative_device):
             PreGameTimer.SetActiveDuration(PreGameTime)
             PreGameTimer.Start()
             PreGameTimer.SuccessEvent.Await()
+
+        # checkpoints
+        SetCheckpoints()
+        # stage props
+        SetPropVisibility()
         
         # Determine what order players should start the race in and assign them to vehicles.
         set Players = GetPlayerStartOrder(GetAllValidPlayers(GetPlayspace().GetPlayers()))
@@ -234,12 +235,6 @@ starting_game_sequence := class(creative_device):
                 StartingPosition.Car
         PlayerVehicle.AssignPlayersToVehicles(Players, Vehicles)
 
-        # checkpoints
-        SetCheckpoints()
-
-        # stage props
-        SetPropVisibility()
-
         # Play cinematics before the race starts.
         PlayCinematicLineup(Players)
 
@@ -263,10 +258,6 @@ starting_game_sequence := class(creative_device):
 
         # Begin the race!
         RaceManager.Begin()
-
-    # OnEnd()<override>():void=
-    #     Test.ProjectLog("hoge?")
-
 
     # Enable each starting position that has a valid player with the appropriate devices.
     SetupStartingPositions(Players:[]player)<suspends>:void=
@@ -368,7 +359,7 @@ starting_game_sequence := class(creative_device):
             for(checkpoint:CheckpointsRound2):
                 checkpoint.Enable()
 
-    SetPropVisibility():void=
+    SetPropVisibility()<suspends>:void=
         logic{
             if (GetRound[] = 0):
                 StageProps.ShowProps[round_enum.first]
