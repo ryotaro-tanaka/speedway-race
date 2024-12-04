@@ -39,7 +39,7 @@ stage_props := class<concrete>:
     var IsRound0PropsVisible: logic = true
     var IsRound1PropsVisible: logic = true
     var IsRound2PropsVisible: logic = true
-    TransactionValue: float = 1000.0
+    TransactionValue: float = 2000.0
 
     ReturnPropsInfo(RoundNum: round_enum, IsDefaultVisible: logic)<transacts>:props_info =
         if (RoundNum = round_enum.first):
